@@ -1,5 +1,6 @@
 # Node Packages
 node_modules/
+.cache
 
 src/
 demo/

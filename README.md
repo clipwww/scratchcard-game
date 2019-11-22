@@ -7,7 +7,7 @@ npm i @re/scratchcard-game
 
 ## Example
 ```typescript
-import { c, EventEnum } from '@re/scratchcard-game';
+import { createScratchcardGame, EventEnum } from '@re/scratchcard-game';
 
 const scratchcardGame = createScratchcardGame({
   el: '#app',
