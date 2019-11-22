@@ -1,4 +1,4 @@
-# Memory Card Game
+# Scratchcard Game
 
 ## 安裝
 ```
