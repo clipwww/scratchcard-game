@@ -7,7 +7,7 @@ export enum EventEnum {
 
 export interface ConfigVM {
   el: string;
-  contentHtml: string;
   backImgSrc: string;
   lineWidth?: number;
+  hideDuration?: number;
 }

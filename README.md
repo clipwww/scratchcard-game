@@ -33,10 +33,10 @@ scratchcardGame.addEventListener(EventEnum.Finish, () => {
 ##  Config
 ```javascript
 const config = {
-  el: '#app', // 塞入刮刮樂 selector
-  contentHtml: '', // 刮開的內容 html
+  el: '#app', // 刮刮樂內容 selector
   backImgSrc: '', // 刮刮卡的圖片
   lineWidth?: 40, // 刮開的線條粗細 px default. 40
+  hideDuration?: 400, // 刮刮樂結束時卡面消失的持續時間 ms default. 400
 }
 
 const scratchcardGame = createScratchcardGame(config);
@@ -59,6 +59,7 @@ const scratchcardGame = createScratchcardGame(config);
 | `imageLoaded` | 刮刮卡的圖片載入完成 |  |
 | `scratch` | 刮卡時 |  |
 | `finish` | 刮刮樂結束 |  |
+| `destroy` | 刪除 canvas & 事件監聽 |  |
 
 ```typescript
 enum EventEnum {

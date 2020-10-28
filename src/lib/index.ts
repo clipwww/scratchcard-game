@@ -72,3 +72,15 @@ export const createEventManager = () => {
     dispatchEvent,
   };
 };
+
+
+export const setTransition = ($el: HTMLElement, value: string) => {
+  // @ts-ignore
+  $el.style.OTransition = value;
+  // @ts-ignore
+  $el.style.MozTransition = value;
+  // @ts-ignore
+  $el.style.msTransition = value;
+  $el.style.webkitTransition = value;
+  $el.style.transition = value;
+}

@@ -1,7 +1,5 @@
-import 'regenerator-runtime/runtime';
-import $ from 'jquery';
 
-import { loadImage, createEventManager } from './lib';
+import { loadImage, createEventManager, setTransition } from './lib';
 import { ConfigVM, EventEnum } from './view-models';
 
 
@@ -10,25 +8,20 @@ export {
   EventEnum,
 };
 
-type JQueryMouseMoveEvent = JQuery.MouseMoveEvent<Document, undefined, Document, Document>;
-type JQueryTouchMoveEvent = JQuery.TouchMoveEvent<Document, undefined, Document, Document>;
-type jQueryTriggeredEvent = JQuery.TriggeredEvent<Document, undefined, Document, Document>;
-
 /**
  * Helper function to extract the coordinates from an event, whether the
  * event is a mouse or touch.
  */
-const getEventCoords = (ev: JQueryMouseMoveEvent | JQueryTouchMoveEvent | jQueryTriggeredEvent): { pageX: number, pageY: number } => {
-  const origEv = ev.originalEvent; // get from jQuery
+const getEventCoords = (ev: MouseEvent | TouchEvent) => {
 
-  if (!!(origEv as TouchEvent).changedTouches) {
-    const { pageX, pageY } = (origEv as TouchEvent).changedTouches[0];
+  if (!!(ev as TouchEvent).changedTouches) {
+    const { pageX, pageY } = (ev as TouchEvent).changedTouches[0];
     return {
       pageX,
       pageY,
     };
   } else {
-    const { pageX, pageY } = ev;
+    const { pageX, pageY } = ev as MouseEvent;
     return {
       pageX,
       pageY,
@@ -44,7 +37,9 @@ const getEventCoords = (ev: JQueryMouseMoveEvent | JQueryTouchMoveEvent | jQuery
  */
 const getLocalCoords = (elem: HTMLCanvasElement, coords: { pageX: number, pageY: number }) => {
   const { pageX, pageY } = coords;
-  const { left, top } = $(elem).offset();
+  const parentHTML = elem.offsetParent as HTMLElement;
+  const left = parentHTML?.offsetLeft;
+  const top = parentHTML?.offsetTop;
   return {
     x: pageX - left,
     y: pageY - top,
@@ -52,8 +47,8 @@ const getLocalCoords = (elem: HTMLCanvasElement, coords: { pageX: number, pageY:
 };
 
 export const createScratchcardGame = (config: ConfigVM) => {
-  const { el, contentHtml, backImgSrc, lineWidth = 40 } = config;
-  const $el: JQuery<HTMLElement> = $(el);
+  const { el, backImgSrc, lineWidth = 40, hideDuration = 400 } = config;
+  const $el: HTMLElement = document.querySelector(el);
 
   const { addEventListener, removeEventListener, dispatchEvent } = createEventManager();
 
@@ -62,21 +57,20 @@ export const createScratchcardGame = (config: ConfigVM) => {
   let img: HTMLImageElement;
   let isFinish = false;
 
-  const canvas = document.createElement('canvas');
-  const $canvas = $(canvas);
+  const $canvas = document.createElement('canvas');
 
 
   const init = async (): Promise<void> => {
-    $el.hide();
-    $el.html(contentHtml);
-    $el.css({
-      position: 'relative',
-    });
-    $canvas.css({
-      position: 'absolute',
-      top: 0,
-      left: 0,
-    });
+    $el.style.visibility = 'hidden';
+    $el.draggable = false;
+    $el.style.userSelect = 'none';
+    $el.style.position = 'relative';
+    $canvas.draggable = false;
+    $canvas.style.userSelect = 'none';
+    $canvas.style.position = 'absolute';
+    $canvas.style.top = '0';
+    $canvas.style.left = '0';
+    setTransition($canvas, `opacity ${hideDuration / 1000}s`)
 
     img = await loadImage(backImgSrc);
     dispatchEvent(EventEnum.ImageLoaded);
@@ -85,48 +79,61 @@ export const createScratchcardGame = (config: ConfigVM) => {
 
     bindEvent();
 
-    $el.append(canvas);
-    $el.show();
+    $el.append($canvas);
+    $el.style.visibility = 'visible';
     dispatchEvent(EventEnum.Init);
   };
 
-  const bindEvent = () => {
-    const onMouseMovie = (e: JQueryMouseMoveEvent | JQueryTouchMoveEvent | jQueryTriggeredEvent) => {
-      if (!mouseDown) {
-        return true;
-      }
-      const { x, y } = getLocalCoords(canvas, getEventCoords(e));
-      scratchLine(x, y);
+  const onMouseMovie = (e: MouseEvent | TouchEvent) => {
+    if (!mouseDown) {
+      return true;
+    }
+    const { x, y } = getLocalCoords($canvas, getEventCoords(e));
+    scratchLine(x, y);
 
-      return false;
-    };
-
-    $(document).on('mousemove', onMouseMovie);
-    $(document).on('touchmove', onMouseMovie);
-    $(document).on('touchstart mousedown', (e) => {
-      mouseDown = true;
-    });
-    $(document).on('touchstart mousedown', onMouseMovie);
-    $(document).on('touchend mouseup', () => {
-      mouseDown = false;
-      isFresh = true;
-    });
+    return false;
   };
 
-  const recompositeCanvases = () => {
-    canvas.width = $el.width();
-    canvas.height = $el.height();
+  const onMouseDown = () => {
+    mouseDown = true;
+  }
 
-    const ctx = canvas.getContext('2d');
+  const onMouseUp = () => {
+    mouseDown = false;
+    isFresh = true;
+  }
+  const bindEvent = () => {
+    document.addEventListener('mousemove', onMouseMovie);
+    document.addEventListener('touchmove', onMouseMovie);
+    document.addEventListener('touchstart', onMouseDown);
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('touchend', onMouseUp);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+  const unBindEvent = () => {
+    document.removeEventListener('mousemove', onMouseMovie);
+    document.removeEventListener('touchmove', onMouseMovie);
+    document.removeEventListener('touchstart', onMouseDown);
+    document.removeEventListener('mousedown', onMouseDown);
+    document.removeEventListener('touchend', onMouseUp);
+    document.removeEventListener('mouseup', onMouseUp);
+  }
+
+  const recompositeCanvases = () => {
+    $canvas.width = $el.clientWidth;
+    $canvas.height = $el.clientHeight;
+    // console.log($el.clientWidth, $el.clientHeight)
+
+    const ctx = $canvas.getContext('2d');
     ctx.globalCompositeOperation = 'copy';
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, $canvas.width, $canvas.height);
     ctx.globalCompositeOperation = 'destination-out';
   };
 
   const scratchLine = (x: number, y: number) => {
     if (isFinish) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = $canvas.getContext('2d');
 
     ctx.lineWidth = lineWidth;
     ctx.lineCap = 'round';
@@ -152,7 +159,7 @@ export const createScratchcardGame = (config: ConfigVM) => {
   const reset = () => {
     isFresh = true;
     isFinish = false;
-    $canvas.show();
+    $canvas.style.opacity = '1';
     recompositeCanvases();
   };
 
@@ -177,8 +184,8 @@ export const createScratchcardGame = (config: ConfigVM) => {
 
     stride *= 4; // 4 elements per pixel
 
-    const ctx = canvas.getContext('2d');
-    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const ctx = $canvas.getContext('2d');
+    const pixels = ctx.getImageData(0, 0, $canvas.width, $canvas.height);
     const pdata = pixels.data;
     const l = pdata.length; // 4 entries per pixel
     // tslint:disable-next-line: no-bitwise
@@ -196,9 +203,17 @@ export const createScratchcardGame = (config: ConfigVM) => {
 
   const finish = () => {
     isFinish = true;
-    $canvas.fadeOut();
+
+    $canvas.style.opacity = '1';
+    $canvas.style.opacity = '0';
+
     dispatchEvent(EventEnum.Finish);
   };
+
+  const destroy = () => {
+    $canvas.remove();
+    unBindEvent();
+  }
 
   init();
 
@@ -206,6 +221,7 @@ export const createScratchcardGame = (config: ConfigVM) => {
     $el,
     reset,
     finish,
+    destroy,
     scratchedPercentage,
     supportsCanvas,
     addEventListener,

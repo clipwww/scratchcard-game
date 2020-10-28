@@ -1,19 +1,24 @@
+import 'regenerator-runtime/runtime';
+
 import { createScratchcardGame, EventEnum } from '../src/index';
 
-const { finish, reset, scratchedPercentage, addEventListener } = createScratchcardGame({
+
+const { finish, reset, destroy, scratchedPercentage, addEventListener } = createScratchcardGame({
   el: '#app',
-  contentHtml: `
-    <img src="https://www.myre.life/images/newIndex/img-welcomeLin.png" />
-  `,
   backImgSrc: './images/img-scratch-top.png',
 });
 
-window['reset'] = reset;
 
 
 addEventListener(EventEnum.Scratch, () => {
-  if (scratchedPercentage() > 70) {
+  const percentage = scratchedPercentage();
+  document.getElementById('js-text').innerText = `刮開 ${percentage}% 了`
+  if (percentage > 70) {
     finish();
   }
 });
 
+window.addEventListener('resize', reset);
+document.getElementById('js-finish').addEventListener('click', finish);
+document.getElementById('js-reset').addEventListener('click', reset)
+document.getElementById('js-destroy').addEventListener('click', destroy)
