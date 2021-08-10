@@ -1,10 +1,5 @@
 # Scratchcard Game
 
-## 安裝
-```
-npm i @re/scratchcard-game
-```
-
 ## Example
 ```typescript
 import { createScratchcardGame, EventEnum } from '@re/scratchcard-game';
