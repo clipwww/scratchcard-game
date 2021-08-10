@@ -18,7 +18,12 @@ addEventListener(EventEnum.Scratch, () => {
   }
 });
 
-window.addEventListener('resize', reset);
+function init() {
+  reset();
+  document.getElementById('js-text').innerText = '';
+}
+
+window.addEventListener('resize', init);
 document.getElementById('js-finish').addEventListener('click', finish);
-document.getElementById('js-reset').addEventListener('click', reset)
+document.getElementById('js-reset').addEventListener('click', init)
 document.getElementById('js-destroy').addEventListener('click', destroy)
