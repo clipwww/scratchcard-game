@@ -7,7 +7,7 @@ import { createScratchcardGame, EventEnum } from '@re/scratchcard-game';
 const scratchcardGame = createScratchcardGame({
   el: '#app',
   contentHtml: `
-    <img src="https://www.myre.life/images/newIndex/img-welcomeLin.png" />
+    <img src="{{ image }}" />
   `,
   backImgSrc: './images/img-scratch-top.png',
 });
